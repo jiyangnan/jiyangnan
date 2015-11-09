@@ -1,0 +1,58 @@
+package com.dfjh.db.utilsTVCycle;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.dbutils.handlers.MapListHandler;
+
+
+public class GetChannel {
+	static String propertiesName = "poiDB.properties";
+	static int s = 0;
+	static int w = 0;
+	public List<String> getChannel() throws SQLException {
+		DBHelper.setFileName(propertiesName); 
+		Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
+//		Pattern p2 = Pattern.compile("[\u0800-\u4e00]");
+		List<Map<String, Object>> getChannelList = null;
+		List<String> pChennel = new ArrayList<String>();
+		try {
+			String sql = "select channel from wk_mapcode";
+			getChannelList = DBHelper.getQueryRunner().query(sql,new MapListHandler());
+			List<String> list = new ArrayList<String>();
+			for (Map<String, Object> entry : getChannelList) {
+				list.add((entry.values().toString()).substring(1, (entry.values().toString()).length() - 1));
+			}
+			for (String string : list) {
+				Matcher m = p.matcher(string);
+//				Matcher m2 = p2.matcher(string);
+//				if ((!m.find() || m2.find()) && !string.startsWith("一")&&!string.startsWith("第")&&!string.contains("CCTV")) {
+				if ((!m.find()||string.equals("テレビ朝日")||string.equals("笑っていいとも"))&&!string.startsWith("CCTV")) {
+//					System.out.println("非法数据！！！" + string+(++w));
+				}else{
+					if (string.length()>2) {
+						pChennel.add(string);
+						System.out.println(string+"合法数据在此处！"+(++s));
+					}else{
+						System.out.println(string+"					长度不够");
+					}
+				}
+			}
+			System.out.println(list.size()+"一共有这么多channel");
+			System.out.println(pChennel.size()+"共有这些合法数据");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return pChennel;
+	}
+	
+//	  public static void main(String[] args) throws SQLException {
+//	  GetChannel channel = new GetChannel(); 
+//	  channel.getChannel();
+//	  }
+	 
+}

@@ -1,0 +1,38 @@
+//测试工作类
+//TestJob.java
+
+package quartzPackage.trvel;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
+import com.dfjh.main.ToPlatform;
+import com.dfjh.main.ToTempMain;
+import com.dfjh.main.ToTotalMain;
+
+
+public class MyJob implements Job {
+	SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	Date d = new Date();
+	String returnstr = DateFormat.format(d);  
+
+	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+		// TODO Auto-generated method stub
+		System.out.println(returnstr+"★★★★★★★★★★★");
+		ToTotalMain tm = new ToTotalMain();
+		tm.justDoToTal();
+		System.out.println(returnstr+"#########");
+		ToTempMain tt = new ToTempMain();
+		tt.toTemp();
+		System.out.println(returnstr+"@@@@@@@@@@@@");
+		ToPlatform tp = new ToPlatform();
+		tp.toPlatform();
+		System.out.println(returnstr+"%%%%%%%%%%%");
+	}
+
+}
+

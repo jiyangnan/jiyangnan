@@ -1,0 +1,163 @@
+package com.dfjh.ToHot.TwitterByClass;
+
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.dbutils.handlers.MapListHandler;
+
+import com.dfjh.db.utils.DBHelper;
+import com.dfjh.db.utils.zwdDBUtil;
+
+public class HotPublishTwitterByClass {
+
+	String propertiesName = "poiDB.properties";
+
+	/**
+	 * 删除热门发布和最新发布表中当前时间往前推两天的数据
+	 */
+	public int delTwoDayAgoHotOrNewData(){
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar calendar = Calendar.getInstance();
+		Date date = new Date();
+		calendar.setTime(date);
+		calendar.add(Calendar.DATE, -3);
+		System.out.println(sdf.format(calendar.getTime()));
+		String sql = "delete from ufeng_twitter_data_inner where intodate='"+sdf.format(calendar.getTime())+"'";
+		int count = zwdDBUtil.delIsNullData(sql);
+		if (count>0) {
+			System.out.println("表中的数据已经清空");
+		}else {
+			System.out.println("没有关于这张表的数据");
+		}
+		return count;
+	}
+
+
+
+	/**
+	 * 生成最新发布的算法
+	 * @param channelName
+	 * @throws SQLException
+	 */
+	public void operHotPublishTwitterByClass(String channelName) throws SQLException{
+		//用来操作时间，控制表名
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar calendar = Calendar.getInstance();
+		Date date = new Date();
+		calendar.setTime(date);
+		int year = calendar.get(Calendar.YEAR);
+		int month = (calendar.get(Calendar.MONTH));
+		String month_str = String.format("%02d", month+1);
+		int day = (calendar.get(Calendar.DATE));
+		String day_str = String.format("%02d", day-1);
+
+		String[] strChar = null;
+		String before_str = null;
+		String after_str = null;
+		String finnal_str = null;
+		if (channelName.contains("\"")) {
+			strChar = channelName.split("\"");
+			before_str = strChar[0];
+			after_str = strChar[1];
+			before_str = before_str + "\"";
+			finnal_str = before_str + after_str;
+		} else if (channelName.contains("%")) {
+			strChar = channelName.split("%");
+			before_str = strChar[0];
+			after_str = strChar[1];
+			before_str = before_str +"\\%";
+			finnal_str = before_str + after_str;
+		} else {
+			finnal_str = channelName;
+		}
+		String queryFacBookSql = "SELECT * FROM wk_twitter_data_"+year+"_"+month_str+"_"+day_str+" where " +
+		"title like \"%"+finnal_str+"%\" and channel=\""+finnal_str+"\" ORDER BY uploadtime DESC LIMIT 0,10";
+		List<Map<String, Object>> channelMapList = null;
+		channelMapList = DBHelper.getQueryRunner().query(queryFacBookSql,new MapListHandler());
+		System.out.println("channelMapLst的长度"+channelMapList.size());
+		if (CollectionUtils.isEmpty(channelMapList)) {
+			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&集合中数据为空");
+		}else{
+			//如果查出来的集合不为空，则实例化一个map   用来往集合中添加标识列
+			Map<String, Object> map = new HashMap<String, Object>();
+			for (int i = 0; i < channelMapList.size(); i++) {
+				map = channelMapList.get(i);
+				map.put("neworhot", "new");
+				map.put("intodate", sdf.format(new Date()));
+			}
+			System.out.println("在执行添加后channelMapList的长度为："+channelMapList.size());
+			zwdDBUtil.addListMap(channelMapList,"ufeng_twitter_data_inner");
+		}
+		System.out.println("操作完成！");
+	}
+	/**
+	 * 生成热门发布的算法
+	 * @param channelName
+	 * @throws SQLException
+	 */
+	public void operTwitterByClassByHot(String channelName) throws SQLException{
+		//操作时间  方便控制表名的生成
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar calendar = Calendar.getInstance();
+		Date date = new Date();
+		calendar.setTime(date);
+		int year = calendar.get(Calendar.YEAR);
+		int month = (calendar.get(Calendar.MONTH));
+		int day = (calendar.get(Calendar.DATE));
+		String month_str = String.format("%02d", month+1);
+		String day_str = String.format("%02d", day-1);
+		String queryFacBookSqlByHot = "SELECT * FROM wk_twitter_data_"+year+"_"+month_str+"_"+day_str+" where channel=\""+channelName+"\" and title like \"%"+channelName+"%\" order by viewcount desc limit 0,10 ";
+		List<Map<String, Object>> channelMapListByHot = null;
+		channelMapListByHot = DBHelper.getQueryRunner().query(queryFacBookSqlByHot,new MapListHandler());
+		System.out.println("channelMapLst的长度"+channelMapListByHot.size());
+		if (CollectionUtils.isEmpty(channelMapListByHot)) {
+			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&集合中数据为空");
+		}else{
+			//如果查出来的集合不为空的话  则实例化一个map  用以往集合中添加一个标识列
+			Map<String, Object> map = new HashMap<String, Object>();
+			for (int i = 0; i < channelMapListByHot.size(); i++) {
+				map = channelMapListByHot.get(i);
+				map.put("neworhot", "hot");
+				map.put("intodate", sdf.format(new Date()));
+			}
+			System.out.println("执行添加标识列后的集合的长度为："+channelMapListByHot.size());
+			zwdDBUtil.addListMap(channelMapListByHot,"ufeng_twitter_data_inner");
+		}
+		System.out.println("操作完成！");
+
+
+
+
+	}
+	public List<Map<String , Object>> getChannel() throws SQLException{
+		List<Map<String, Object>> getChannelList = null;
+		String sql = "select channel from wk_mapcode";
+		getChannelList = DBHelper.getQueryRunner().query(sql, new MapListHandler());
+		System.out.println(getChannelList.size());
+		return getChannelList;
+	}
+
+
+	/**
+	 * 删除为null的数据
+	 */
+	public void delIsNullDateByYtb(){
+		String sql = "delete from ufeng_twitter_data_inner where isnull(neworhot)";
+		int count = zwdDBUtil.delIsNullData(sql);
+		if (count>0) {
+			System.out.println("为null的数据已经处理完毕");
+		}else{
+			System.out.println("没有为null的数据");
+		}
+
+	}
+
+
+
+}

@@ -1,0 +1,15 @@
+username=root
+password=qazwsx123456
+url=jdbc:mysql://120.25.160.211:15000/bigdataplatform?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+driver=com.mysql.jdbc.Driver
+
+cron=1 0 0 ? * SUN *
+
+taday=2015-10-18
+tadayForWeek=2015-10-18
+tadayForMonth=2015-10-18
+min=50
+hour=10
+
+
+setNum=-60
